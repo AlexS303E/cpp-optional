@@ -38,6 +38,58 @@ public:
         }
     }
 
+    ~Optional() {
+        Reset();
+    }
+
+    bool HasValue() const {
+        return is_initialized_;
+    }
+
+    T& Value() {
+        if (!is_initialized_) {
+            throw BadOptionalAccess();
+        }
+        return **this;
+    }
+
+    const T& Value() const {
+        if (!is_initialized_) {
+            throw BadOptionalAccess();
+        }
+        return **this;
+    }
+
+    void Reset() {
+        if (is_initialized_) {
+            reinterpret_cast<T*>(data_)->~T();
+            is_initialized_ = false;
+        }
+    }
+
+    template <typename... Args>
+    void Emplace(Args&&... args) {
+        Reset();
+        new (data_) T(std::forward<Args>(args)...);
+        is_initialized_ = true;
+    }
+
+    T& operator*() {
+        return *reinterpret_cast<T*>(data_);
+    }
+
+    const T& operator*() const {
+        return *reinterpret_cast<const T*>(data_);
+    }
+
+    T* operator->() {
+        return reinterpret_cast<T*>(data_);
+    }
+
+    const T* operator->() const {
+        return reinterpret_cast<const T*>(data_);
+    }
+
     Optional& operator=(const T& value) {
         if (is_initialized_) {
             **this = value;
@@ -95,51 +147,6 @@ public:
             }
         }
         return *this;
-    }
-
-    ~Optional() {
-        Reset();
-    }
-
-    bool HasValue() const {
-        return is_initialized_;
-    }
-
-    T& operator*() {
-        return *reinterpret_cast<T*>(data_);
-    }
-
-    const T& operator*() const {
-        return *reinterpret_cast<const T*>(data_);
-    }
-
-    T* operator->() {
-        return reinterpret_cast<T*>(data_);
-    }
-
-    const T* operator->() const {
-        return reinterpret_cast<const T*>(data_);
-    }
-
-    T& Value() {
-        if (!is_initialized_) {
-            throw BadOptionalAccess();
-        }
-        return **this;
-    }
-
-    const T& Value() const {
-        if (!is_initialized_) {
-            throw BadOptionalAccess();
-        }
-        return **this;
-    }
-
-    void Reset() {
-        if (is_initialized_) {
-            reinterpret_cast<T*>(data_)->~T();
-            is_initialized_ = false;
-        }
     }
 
 private:
