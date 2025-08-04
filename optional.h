@@ -30,9 +30,8 @@ public:
         }
     }
 
-    Optional(Optional&& other) noexcept(std::is_nothrow_move_constructible_v<T>)
-        : is_initialized_(other.is_initialized_)
-    {
+    Optional(Optional&& other) noexcept
+        : is_initialized_(other.is_initialized_) {
         if (other.is_initialized_) {
             new (data_) T(std::move(*reinterpret_cast<T*>(other.data_)));
         }
@@ -46,18 +45,25 @@ public:
         return is_initialized_;
     }
 
-    T& Value() {
+    T& Value()& {
         if (!is_initialized_) {
             throw BadOptionalAccess();
         }
         return **this;
     }
 
-    const T& Value() const {
+    const T& Value() const& {
         if (!is_initialized_) {
             throw BadOptionalAccess();
         }
         return **this;
+    }
+
+    T&& Value()&& {
+        if (!is_initialized_) {
+            throw BadOptionalAccess();
+        }
+        return std::move(**this);
     }
 
     void Reset() {
@@ -72,14 +78,6 @@ public:
         Reset();
         new (data_) T(std::forward<Args>(args)...);
         is_initialized_ = true;
-    }
-
-    T& operator*() {
-        return *reinterpret_cast<T*>(data_);
-    }
-
-    const T& operator*() const {
-        return *reinterpret_cast<const T*>(data_);
     }
 
     T* operator->() {
@@ -130,8 +128,7 @@ public:
         return *this;
     }
 
-    Optional& operator=(Optional&& rhs) noexcept(std::is_nothrow_move_assignable_v<T>)
-    {
+    Optional& operator=(Optional&& rhs) noexcept {
         if (this != &rhs) {
             if (rhs.is_initialized_) {
                 if (is_initialized_) {
@@ -147,6 +144,18 @@ public:
             }
         }
         return *this;
+    }
+
+    T& operator*()& {
+        return *reinterpret_cast<T*>(data_);
+    }
+
+    const T& operator*() const& {
+        return *reinterpret_cast<const T*>(data_);
+    }
+
+    T&& operator*()&& {
+        return std::move(*reinterpret_cast<T*>(data_));
     }
 
 private:
